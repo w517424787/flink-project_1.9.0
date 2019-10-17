@@ -1,4 +1,4 @@
-package com.sdf.flink;
+package com.sdf.flink.kafka;
 
 import org.apache.flink.api.common.functions.FoldFunction;
 import org.apache.flink.api.java.functions.KeySelector;
