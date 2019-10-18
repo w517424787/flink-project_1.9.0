@@ -1,4 +1,4 @@
-package com.sdf.flink;
+package com.sdf.flink.kafka;
 
 import com.sdf.flink.util.KafkaUtils;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
