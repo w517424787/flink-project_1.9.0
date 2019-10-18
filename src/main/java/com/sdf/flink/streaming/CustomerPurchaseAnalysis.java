@@ -3,8 +3,10 @@ package com.sdf.flink.streaming;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +32,8 @@ public class CustomerPurchaseAnalysis {
 
     private static final Logger LOG = LoggerFactory.getLogger(CustomerPurchaseAnalysis.class);
 
+    //private static class CustomWatermarkExtractor extends BoundedOutOfOrdernessTimestampExtractor<>
+
     public static void main(String[] args) throws Exception {
         LOG.info("Input args:" + Arrays.asList(args));
 
@@ -54,6 +58,7 @@ public class CustomerPurchaseAnalysis {
         checkpointConfig.setCheckpointTimeout(10 * 60 * 1000); //设置Timeout时间
 
         env.getConfig().setGlobalJobParameters(parameters);
-
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        
     }
 }
