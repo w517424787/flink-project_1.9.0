@@ -16,6 +16,7 @@ target/
 *.ipr
 *.bak
 target
+.idea/*.xml
 
 ### NetBeans ###
 nbproject/private/
