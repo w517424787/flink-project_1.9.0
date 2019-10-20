@@ -4,10 +4,12 @@ import com.sdf.flink.model.UserEvent;
 import com.sdf.flink.util.ConvertDateUtils;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
@@ -41,7 +43,7 @@ public class CustomerPurchaseAnalysis {
     //定义水印
     private static class CustomWatermarkExtractor extends BoundedOutOfOrdernessTimestampExtractor<UserEvent> {
 
-        public CustomWatermarkExtractor(Time maxOutOfOrderness) {
+        private CustomWatermarkExtractor(Time maxOutOfOrderness) {
             super(maxOutOfOrderness);
         }
 
@@ -83,11 +85,17 @@ public class CustomerPurchaseAnalysis {
                 new SimpleStringSchema(), parameters.getProperties());
 
         //将流数据转换成(UserEvent,userId)格式
-        env.addSource(kafkaUserEventSource).map(new MapFunction<String,UserEvent>() {
-            @Override
-            public UserEvent map(String value) throws Exception {
-                return null;
-            }
-        });
+        final KeyedStream<UserEvent, String> customerUserEventStream =
+                env.addSource(kafkaUserEventSource).map(value -> UserEvent.buildEvent(value.toString()))
+                        .assignTimestampsAndWatermarks(new CustomWatermarkExtractor(Time.minutes(10)))
+                        .keyBy(new KeySelector<UserEvent, String>() {
+                            @Override
+                            public String getKey(UserEvent event) throws Exception {
+                                return event.getUserId();
+                            }
+                        });
+
+
+
     }
 }

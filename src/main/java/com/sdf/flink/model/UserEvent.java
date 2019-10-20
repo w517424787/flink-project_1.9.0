@@ -1,11 +1,15 @@
 package com.sdf.flink.model;
 
+import com.alibaba.fastjson.JSON;
+
+import java.io.Serializable;
+
 /**
  * 定义用户购物日志数据字段
  * 数据格式：{"userId":"d8f3368aba5df27a39cbcfd36ce8084f","channel":"APP","eventType":"PURCHASE",
  * "eventTime":"2018-06-12 09:30:28","data":{"productId":196,"price":600.00,"amount":600.00}}
  */
-public class UserEvent {
+public class UserEvent implements Serializable {
     private String userId;
     private String channel;
     private String eventType;
@@ -60,6 +64,19 @@ public class UserEvent {
         this.channel = channel;
         this.eventType = eventType;
         this.eventTime = eventTime;
+        this.data = data;
+    }
+
+    /**
+     * @param value 用户浏览商品事件数据
+     * @return UserEvent
+     */
+    public static UserEvent buildEvent(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        } else {
+            return JSON.parseObject(value, UserEvent.class);
+        }
     }
 
     @Override
