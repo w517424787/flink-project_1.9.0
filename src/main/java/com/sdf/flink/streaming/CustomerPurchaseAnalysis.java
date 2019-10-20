@@ -1,5 +1,9 @@
 package com.sdf.flink.streaming;
 
+import com.sdf.flink.model.UserEvent;
+import com.sdf.flink.util.ConvertDateUtils;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -7,6 +11,8 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +38,18 @@ public class CustomerPurchaseAnalysis {
 
     private static final Logger LOG = LoggerFactory.getLogger(CustomerPurchaseAnalysis.class);
 
-    //private static class CustomWatermarkExtractor extends BoundedOutOfOrdernessTimestampExtractor<>
+    //定义水印
+    private static class CustomWatermarkExtractor extends BoundedOutOfOrdernessTimestampExtractor<UserEvent> {
+
+        public CustomWatermarkExtractor(Time maxOutOfOrderness) {
+            super(maxOutOfOrderness);
+        }
+
+        @Override
+        public long extractTimestamp(UserEvent element) {
+            return ConvertDateUtils.convertDateToLong(element.getEventTime(), "yyyy-MM-dd HH:mm:ss");
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         LOG.info("Input args:" + Arrays.asList(args));
@@ -59,6 +76,18 @@ public class CustomerPurchaseAnalysis {
 
         env.getConfig().setGlobalJobParameters(parameters);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        
+
+        // create customer user event stream
+        final FlinkKafkaConsumer011 kafkaUserEventSource = new FlinkKafkaConsumer011<>(
+                parameters.getRequired("input-event-topic"),
+                new SimpleStringSchema(), parameters.getProperties());
+
+        //将流数据转换成(UserEvent,userId)格式
+        env.addSource(kafkaUserEventSource).map(new MapFunction<String,UserEvent>() {
+            @Override
+            public UserEvent map(String value) throws Exception {
+                return null;
+            }
+        });
     }
 }
