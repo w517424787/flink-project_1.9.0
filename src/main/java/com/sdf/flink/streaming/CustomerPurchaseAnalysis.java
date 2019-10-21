@@ -1,20 +1,27 @@
 package com.sdf.flink.streaming;
 
+import com.sdf.flink.function.ConnectedBroadcastProcessFunction;
+import com.sdf.flink.model.Config;
 import com.sdf.flink.model.UserEvent;
 import com.sdf.flink.util.ConvertDateUtils;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +46,13 @@ import java.util.Arrays;
 public class CustomerPurchaseAnalysis {
 
     private static final Logger LOG = LoggerFactory.getLogger(CustomerPurchaseAnalysis.class);
+
+    //定义广播状态
+    private static final MapStateDescriptor<String, Config> mapStateDescriptor =
+            new MapStateDescriptor<>("configBroadcastState",
+                    BasicTypeInfo.STRING_TYPE_INFO,
+                    TypeInformation.of(new TypeHint<Config>() {
+                    }));
 
     //定义水印
     private static class CustomWatermarkExtractor extends BoundedOutOfOrdernessTimestampExtractor<UserEvent> {
@@ -95,7 +109,24 @@ public class CustomerPurchaseAnalysis {
                             }
                         });
 
+        //读取配置参数数据流
+        final FlinkKafkaConsumer011 kafkaConfigEventSource = new FlinkKafkaConsumer011<>(
+                parameters.getRequired("input-config-topic"),
+                new SimpleStringSchema(), parameters.getProperties());
 
+        //进行广播
+        final BroadcastStream<Config> configBroadcastStream =
+                env.addSource(kafkaConfigEventSource).map(value -> Config.buildConfig(value.toString()))
+                        .broadcast(mapStateDescriptor);
+
+        //将结果输出到Kafka Topic中
+        final FlinkKafkaProducer011 kafkaProducer011 =
+                new FlinkKafkaProducer011(parameters.getRequired("output-topic"),
+                        new SimpleStringSchema(), parameters.getProperties());
+
+        //连接两个流数据
+        customerUserEventStream.connect(configBroadcastStream)
+                .process(new ConnectedBroadcastProcessFunction());
 
     }
 }
