@@ -1,31 +1,39 @@
 package com.sdf.flink.streaming;
 
-import com.sdf.flink.function.ConnectedBroadcastProcessFunction;
-import com.sdf.flink.model.Config;
-import com.sdf.flink.model.UserEvent;
+import com.sdf.flink.model.*;
 import com.sdf.flink.util.ConvertDateUtils;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.api.common.state.BroadcastState;
+import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.functions.KeySelector;
+import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.calcite.shaded.com.google.common.collect.Maps;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
+import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 用户购物行为路径分析，分析用户购物时路径长度
@@ -46,9 +54,10 @@ import java.util.Arrays;
 public class CustomerPurchaseAnalysis {
 
     private static final Logger LOG = LoggerFactory.getLogger(CustomerPurchaseAnalysis.class);
+    private static final Config DEFAULT_CONFIG = new Config("APP", "2019-10-20", 0, 20);
 
     //定义广播状态
-    private static final MapStateDescriptor<String, Config> mapStateDescriptor =
+    private static final MapStateDescriptor<String, Config> configStateDescriptor =
             new MapStateDescriptor<>("configBroadcastState",
                     BasicTypeInfo.STRING_TYPE_INFO,
                     TypeInformation.of(new TypeHint<Config>() {
@@ -64,6 +73,78 @@ public class CustomerPurchaseAnalysis {
         @Override
         public long extractTimestamp(UserEvent element) {
             return ConvertDateUtils.convertDateToLong(element.getEventTime(), "yyyy-MM-dd HH:mm:ss");
+        }
+    }
+
+    //定义广播函数
+    private static class ConnectedBroadcastProcessFunction extends KeyedBroadcastProcessFunction<Object,
+            UserEvent, Config, EvaluatedResult> {
+
+        //定义state格式：(channel, Map<userId, UserEventContainer>)
+        private final MapStateDescriptor<String, Map<String, UserEventContainer>> userMapStateDesc =
+                new MapStateDescriptor<>("userEventContainerState", BasicTypeInfo.STRING_TYPE_INFO,
+                        new MapTypeInfo<>(String.class, UserEventContainer.class));
+
+        @Override
+        public void processElement(UserEvent value, ReadOnlyContext ctx, Collector<EvaluatedResult> out) throws Exception {
+            String userId = value.getUserId();
+            String channel = value.getChannel();
+            EventType eventType = EventType.valueOf(value.getEventType());
+            Config config = ctx.getBroadcastState(configStateDescriptor).get(channel);
+            LOG.info("Read config: channel=" + channel + ", config=" + config);
+            //判断是否为空
+            if (Objects.isNull(config)) {
+                config = DEFAULT_CONFIG;
+            }
+
+            final MapState<String, Map<String, UserEventContainer>> state =
+                    getRuntimeContext().getMapState(userMapStateDesc);
+            // collect per-user events to the user map state
+            Map<String, UserEventContainer> userEventContainerMap = state.get(channel);
+            //判断是否为空
+            if (Objects.isNull(userEventContainerMap)) {
+                userEventContainerMap = Maps.newHashMap();
+                state.put(channel, userEventContainerMap);
+            }
+            //如果没有包含该userId信息，则添加
+            if (!userEventContainerMap.containsKey(userId)) {
+                UserEventContainer container = new UserEventContainer();
+                container.setUserId(userId);
+                userEventContainerMap.put(userId, container);
+            }
+            //如果存在，则添加值
+            userEventContainerMap.get(userId).getUserEventList().add(value);
+
+            // check whether a user purchase event arrives
+            // if true, then compute the purchase path length, and prepare to trigger predefined actions
+            if (eventType == EventType.PURCHASE) {
+                LOG.info("Receive a purchase event: " + value);
+                Optional<EvaluatedResult> result = compute(config, userEventContainerMap.get(userId));
+                result.ifPresent(r -> out.collect(result.get()));
+                // clear evaluated user's events
+                state.get(channel).remove(userId);
+            }
+
+        }
+
+        private Optional<EvaluatedResult> compute(Config config, UserEventContainer container) {
+            return null;
+        }
+
+        @Override
+        public void processBroadcastElement(Config value, Context ctx, Collector<EvaluatedResult> out) throws Exception {
+            String channel = value.getChannel();
+            BroadcastState<String, Config> state = ctx.getBroadcastState(configStateDescriptor);
+            final Config oldConfig = ctx.getBroadcastState(configStateDescriptor).get(channel);
+            if (state.contains(channel)) {
+                LOG.info("Configured channel exists: channel=" + channel);
+                LOG.info("Config detail: oldConfig=" + oldConfig + ", newConfig=" + value);
+            } else {
+                LOG.info("Config detail: defaultConfig=" + DEFAULT_CONFIG + ", newConfig=" + value);
+            }
+
+            /// update config value for configKey
+            state.put(channel, value);
         }
     }
 
@@ -117,7 +198,7 @@ public class CustomerPurchaseAnalysis {
         //进行广播
         final BroadcastStream<Config> configBroadcastStream =
                 env.addSource(kafkaConfigEventSource).map(value -> Config.buildConfig(value.toString()))
-                        .broadcast(mapStateDescriptor);
+                        .broadcast(configStateDescriptor);
 
         //将结果输出到Kafka Topic中
         final FlinkKafkaProducer011 kafkaProducer011 =
@@ -125,8 +206,9 @@ public class CustomerPurchaseAnalysis {
                         new SimpleStringSchema(), parameters.getProperties());
 
         //连接两个流数据
-        customerUserEventStream.connect(configBroadcastStream)
+        DataStream<EvaluatedResult> connectedStream = customerUserEventStream.connect(configBroadcastStream)
                 .process(new ConnectedBroadcastProcessFunction());
-
+        connectedStream.addSink(kafkaProducer011);
+        env.execute("CustomerPurchaseAnalysis");
     }
 }
