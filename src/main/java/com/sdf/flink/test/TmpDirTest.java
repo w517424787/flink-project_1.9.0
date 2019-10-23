@@ -24,10 +24,10 @@ public class TmpDirTest {
 //        System.out.println(random.nextLong());
         //final File tmpdir = new File(AccessController.doPrivileged(new GetPropertyAction("java.io.tmpdir")));
         //System.out.println(tmpdir);
-        //System.out.println(Runtime.getRuntime().maxMemory() / (1024 * 1024 * 1024));
-        Map<String, Integer> map = new HashMap<>();
-        map.put("a", 1);
-        map.put("b", 2);
-        System.out.println("eventTypeCounts:" + map);
+        System.out.println(Runtime.getRuntime().maxMemory() / (1024 * 1024 * 1024));
+//        Map<String, Integer> map = new HashMap<>();
+//        map.put("a", 1);
+//        map.put("b", 2);
+//        System.out.println("eventTypeCounts:" + map);
     }
 }
