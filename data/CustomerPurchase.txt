@@ -1,0 +1,36 @@
+提交运行Flink Job
+我们需要创建对应Topic，创建命令参考如下：
+./bin/kafka-topics.sh --zookeeper 172.23.4.138:2181,172.23.4.139:2181,172.23.4.140:2181/kafka --create --topic user_events --replication-factor 2 --partitions 3
+./bin/kafka-topics.sh --zookeeper 172.23.4.138:2181,172.23.4.139:2181,172.23.4.140:2181/kafka --create --topic app_config --replication-factor 2 --partitions 3
+./bin/kafka-topics.sh --zookeeper 172.23.4.138:2181,172.23.4.139:2181,172.23.4.140:2181/kafka --create --topic action_result --replication-factor 2 --partitions 3
+
+上面程序开发完成后，需要进行编译打包，并提交Flink Job到Flink集群，执行如下命令：
+bin/flink run -d -c org.shirdrn.flink.broadcaststate.UserPurchaseBehaviorTracker ~/flink-app-jobs.jar --input-event-topic user_events --input-config-topic app_config --output-topic action_result --bootstrap.servers 172.23.4.138:9092
+--zookeeper.connect zk01.td.com:2181,zk02.td.com:2181,zk03.td.com:2181 --group.id customer-purchase-behavior-tracker
+
+Flink Job正常运行后，我们向Kafka的app_config这个Topic中模拟发送配置事件记录：
+./bin/kafka-console-producer.sh --topic app_config --broker-list 172.23.4.138:9092
+
+输入如下配置事件JSON字符串：
+{"channel":"APP","registerDate":"2018-01-01","historyPurchaseTimes":0,"maxPurchasePathLength":6}
+
+向Kafka的user_events这个Topic中模拟发送用户操作行为事件记录：
+./bin/kafka-console-producer.sh --topic app_config --broker-list 172.23.4.138:9092
+
+分别依次输入如下用户的每个操作行为事件JSON字符串：
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 08:45:24","data":{"productId":126}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 08:57:32","data":{"productId":273}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 09:21:08","data":{"productId":126}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 09:21:49","data":{"productId":103}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 09:21:59","data":{"productId":157}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 09:27:11","data":{"productId":126}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"ADD_TO_CART","eventTime":"2018-06-12 09:43:18","data":{"productId":126}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"VIEW_PRODUCT","eventTime":"2018-06-12 09:27:11","data":{"productId":126}}
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","eventType":"PURCHASE","eventTime":"2018-06-12 09:30:28","data":{"productId":126,"price":299.00,"amount":260.00}}
+
+可以看到，输入每个事件，都会在Task中接收到并处理。在输入到最后一个用户购买事件时，触发了计算并输出结果，可以在另一个输出Kafka Topic action_result中看到结果，如下所示：
+{"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","purchasePathLength":9,"eventTypeCounts":{"ADD_TO_CART":1,"PURCHASE":1,"VIEW_PRODUCT":7}}
+
+如果我们将前面的配置内容，再改成如下内容：
+{"channel":"APP","registerDate":"2018-01-01","historyPurchaseTimes":0,"maxPurchasePathLength":20}
+同样输入上述用户操作行为事件记录，由于maxPurchasePathLength=20，所以没有触发对应结果计算和输出，因为用户的purchasePathLength=9，可见配置动态变更生效。

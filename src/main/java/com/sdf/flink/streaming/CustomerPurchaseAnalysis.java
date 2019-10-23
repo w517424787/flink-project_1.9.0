@@ -30,10 +30,8 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 用户购物行为路径分析，分析用户购物时路径长度
@@ -72,7 +70,7 @@ public class CustomerPurchaseAnalysis {
 
         @Override
         public long extractTimestamp(UserEvent element) {
-            return ConvertDateUtils.convertDateToLong(element.getEventTime(), "yyyy-MM-dd HH:mm:ss");
+            return element.getEventTimestamp();
         }
     }
 
@@ -119,16 +117,52 @@ public class CustomerPurchaseAnalysis {
             // if true, then compute the purchase path length, and prepare to trigger predefined actions
             if (eventType == EventType.PURCHASE) {
                 LOG.info("Receive a purchase event: " + value);
+
+                //计算玩家购物路径
                 Optional<EvaluatedResult> result = compute(config, userEventContainerMap.get(userId));
                 result.ifPresent(r -> out.collect(result.get()));
                 // clear evaluated user's events
                 state.get(channel).remove(userId);
             }
-
         }
 
+        /**
+         * 计算玩家购物路径
+         *
+         * @param config
+         * @param container
+         * @return
+         */
         private Optional<EvaluatedResult> compute(Config config, UserEventContainer container) {
-            return null;
+            Optional<EvaluatedResult> result = Optional.empty();
+
+            //根据渠道进行配置
+            String channel = config.getChannel();
+            int historyPurchaseTimes = config.getHistoryPurchaseTimes();
+            int maxPurchasePathLength = config.getMaxPurchasePathLength();
+            int purchasePathLen = container.getUserEventList().size();
+
+            //当购物完成时路径大于配置的最长路径就进行计算
+            if (historyPurchaseTimes < 10 && purchasePathLen > maxPurchasePathLength) {
+                // sort by event time
+                container.getUserEventList().sort(Comparator.comparingLong(UserEvent::getEventTimestamp));
+                final Map<String, Integer> stat = Maps.newHashMap();
+                container.getUserEventList()
+                        .stream()
+                        .collect(Collectors.groupingBy(UserEvent::getEventType))
+                        .forEach((eventType, events) -> stat.put(eventType, events.size()));
+
+                //输出购物记录
+                final EvaluatedResult evaluatedResult = new EvaluatedResult();
+                evaluatedResult.setUserId(container.getUserId());
+                evaluatedResult.setChannel(channel);
+                evaluatedResult.setEventTypeCounts(stat);
+                evaluatedResult.setPurchasePathLength(purchasePathLen);
+
+                LOG.info("Evaluated result: " + evaluatedResult.toString());
+                result = Optional.of(evaluatedResult);
+            }
+            return result;
         }
 
         @Override
@@ -143,7 +177,7 @@ public class CustomerPurchaseAnalysis {
                 LOG.info("Config detail: defaultConfig=" + DEFAULT_CONFIG + ", newConfig=" + value);
             }
 
-            /// update config value for configKey
+            // update config value for configKey
             state.put(channel, value);
         }
     }
@@ -157,7 +191,8 @@ public class CustomerPurchaseAnalysis {
             System.out.println("Missing parameters!\n" +
                     "Usage: Kafka --input-event-topic <topic> --input-config-topic <topic> --output-topic <topic> " +
                     "--bootstrap.servers <kafka brokers> " +
-                    "--zookeeper.connect <zk quorum> --group.id <group id>");
+                    "--zookeeper.connect <zk quorum> " +
+                    "--group.id <group id>");
         }
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -180,7 +215,7 @@ public class CustomerPurchaseAnalysis {
                 new SimpleStringSchema(), parameters.getProperties());
 
         //将流数据转换成(UserEvent,userId)格式
-        final KeyedStream<UserEvent, String> customerUserEventStream =
+        @SuppressWarnings("unchecked") final KeyedStream<UserEvent, String> customerUserEventStream =
                 env.addSource(kafkaUserEventSource).map(value -> UserEvent.buildEvent(value.toString()))
                         .assignTimestampsAndWatermarks(new CustomWatermarkExtractor(Time.minutes(10)))
                         .keyBy(new KeySelector<UserEvent, String>() {
@@ -196,19 +231,22 @@ public class CustomerPurchaseAnalysis {
                 new SimpleStringSchema(), parameters.getProperties());
 
         //进行广播
-        final BroadcastStream<Config> configBroadcastStream =
+        @SuppressWarnings("unchecked") final BroadcastStream<Config> configBroadcastStream =
                 env.addSource(kafkaConfigEventSource).map(value -> Config.buildConfig(value.toString()))
                         .broadcast(configStateDescriptor);
 
         //将结果输出到Kafka Topic中
-        final FlinkKafkaProducer011 kafkaProducer011 =
+        @SuppressWarnings("unchecked") final FlinkKafkaProducer011 kafkaProducer011 =
                 new FlinkKafkaProducer011(parameters.getRequired("output-topic"),
                         new SimpleStringSchema(), parameters.getProperties());
 
         //连接两个流数据
         DataStream<EvaluatedResult> connectedStream = customerUserEventStream.connect(configBroadcastStream)
                 .process(new ConnectedBroadcastProcessFunction());
+
+        //输出到Kafka中
         connectedStream.addSink(kafkaProducer011);
+
         env.execute("CustomerPurchaseAnalysis");
     }
 }

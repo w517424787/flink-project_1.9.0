@@ -1,8 +1,12 @@
 package com.sdf.flink.model;
 
 import com.alibaba.fastjson.JSON;
+import com.sdf.flink.util.ConvertDateUtils;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * 定义用户购物日志数据字段
@@ -77,6 +81,10 @@ public class UserEvent implements Serializable {
         } else {
             return JSON.parseObject(value, UserEvent.class);
         }
+    }
+
+    public long getEventTimestamp() {
+        return ConvertDateUtils.convertDateToLong(getEventTime(), "yyyy-MM-dd HH:mm:ss");
     }
 
     @Override

@@ -10,7 +10,7 @@ object WordCount {
     conf.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, true)
 
     val env = ExecutionEnvironment.createLocalEnvironmentWithWebUI(conf)
-    val text = env.readTextFile("C:\\FlinkProject\\flink-project_1.9.0\\data\\test.txt")
+    val text = env.readTextFile("C:\\FlinkProject\\flink-project_1.9.0\\data\\TmpDirTest.txt")
     val counts = text.flatMap(_.split(",")).map((_, 1))
       .groupBy(0)
       .sum(1)

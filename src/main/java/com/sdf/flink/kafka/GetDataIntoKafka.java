@@ -19,7 +19,7 @@ public class GetDataIntoKafka {
         conf.setBoolean(ConfigConstants.LOCAL_START_WEBSERVER, true);
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
         final String brokerList = "192.168.7.113:9092,192.168.7.114:9092,192.168.7.115:9092";
-        final String topic = "flink-test";
+        final String topic = "flink-TmpDirTest";
 
         //读取Kafka属性
         Properties properties = KafkaUtils.getKafkaProperties();
