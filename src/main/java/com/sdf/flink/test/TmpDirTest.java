@@ -1,6 +1,7 @@
 package com.sdf.flink.test;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.sdf.flink.model.UserEvent;
 import com.sdf.flink.util.ConvertDateUtils;
 import sun.security.action.GetPropertyAction;
@@ -24,10 +25,13 @@ public class TmpDirTest {
 //        System.out.println(random.nextLong());
         //final File tmpdir = new File(AccessController.doPrivileged(new GetPropertyAction("java.io.tmpdir")));
         //System.out.println(tmpdir);
-        System.out.println(Runtime.getRuntime().maxMemory() / (1024 * 1024 * 1024));
+//        System.out.println(Runtime.getRuntime().maxMemory() / (1024 * 1024 * 1024));
 //        Map<String, Integer> map = new HashMap<>();
 //        map.put("a", 1);
 //        map.put("b", 2);
 //        System.out.println("eventTypeCounts:" + map);
+
+        JSONObject json = JSON.parseObject("{\"userId\":\"11\",\"itemId\":\"0001\"}");
+        System.out.println(json);
     }
 }

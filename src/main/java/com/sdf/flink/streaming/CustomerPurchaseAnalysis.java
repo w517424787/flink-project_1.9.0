@@ -177,7 +177,7 @@ public class CustomerPurchaseAnalysis {
                 LOG.info("Config detail: defaultConfig=" + DEFAULT_CONFIG + ", newConfig=" + value);
             }
 
-            // update config value for configKey
+            // update config value for config key
             state.put(channel, value);
         }
     }
