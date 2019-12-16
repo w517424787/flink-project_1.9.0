@@ -15,11 +15,11 @@ public class GetDataFromKafka {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        Properties properties = KafkaUtils.getKafkaProperties();
-
-        DataStreamSource<String> dataStreamSource = env.addSource(new FlinkKafkaConsumer011<>("usernetworkdelay",
-                new SimpleStringSchema(), properties)).setParallelism(1);
-        dataStreamSource.print();
+//        Properties properties = KafkaUtils.getKafkaProperties();
+//
+//        DataStreamSource<String> dataStreamSource = env.addSource(new FlinkKafkaConsumer011<>("usernetworkdelay",
+//                new SimpleStringSchema(), properties)).setParallelism(1);
+//        dataStreamSource.print();
 
         env.execute("Flink Demo");
     }

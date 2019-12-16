@@ -12,7 +12,8 @@ public class GetKafkaProperties {
         //kafka属性
         Properties props = new Properties();
         props.put("bootstrap.servers", "192.168.200.129:9092");
-        props.put("zookeeper.connect", "192.168.200.129:2181");
+        //kafka 0.8才需要
+        //props.put("zookeeper.connect", "192.168.200.129:2181");
         props.put("group.id", "metric-group");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
