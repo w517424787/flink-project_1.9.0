@@ -16,6 +16,7 @@ import org.apache.flink.types.Row;
 
 public class WordCountTable {
     public static void main(String[] args) throws Exception {
+        //批处理
         ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         BatchTableEnvironment tEnv = BatchTableEnvironment.create(env);
 
