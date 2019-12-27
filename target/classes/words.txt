@@ -1,4 +1,0 @@
-zhangsan,90
-lishi,100
-wangwu,95
-zhaoliu,80
