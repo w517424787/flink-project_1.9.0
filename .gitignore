@@ -1,4 +1,4 @@
-target/
+
 !.mvn/wrapper/maven-wrapper.jar
 *.log
 ### STS ###
@@ -16,8 +16,8 @@ target/
 *.ipr
 *.bak
 target
-.idea/*.xml
 target/*
+.idea/*.xml
 
 ### NetBeans ###
 nbproject/private/
