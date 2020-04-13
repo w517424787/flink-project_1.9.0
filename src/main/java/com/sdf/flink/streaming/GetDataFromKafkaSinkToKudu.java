@@ -8,6 +8,8 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -15,16 +17,17 @@ import java.util.Properties;
  */
 
 public class GetDataFromKafkaSinkToKudu {
+
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         //设置并行度
         env.setParallelism(2);
-        env.enableCheckpointing(300000);
+        env.enableCheckpointing(3600000);
         env.getCheckpointConfig().setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
 
         //kafka属性
         Properties properties = KafkaUtils.getKafkaProperties();
-        
+
         FlinkKafkaConsumer<String> consumer = new FlinkKafkaConsumer("usernetworkdelay",
                 new SimpleStringSchema(), properties);
         //设置offset读取位置
@@ -33,10 +36,13 @@ public class GetDataFromKafkaSinkToKudu {
         //consumer.setStartFromLatest(); //从最新记录开始
         //consumer.setStartFromTimestamp(100000); //从指定的epoch时间戳（毫秒）开始;
 
-        DataStreamSource<String> dataStreamSource = env.addSource(consumer).setParallelism(1);
+        DataStreamSource<String> dataStreamSource = env.addSource(consumer);
 
-        dataStreamSource.addSink(new SinkToKudu("192.168.7.111:7051", 4000));
+        //kudu master
+        List<String> kudu_master = Arrays.asList("192.168.7.111");
 
-        env.execute("Sink To Kudu");
+        dataStreamSource.addSink(new SinkToKudu(kudu_master, 4000)).name("Sink_To_Kudu").setParallelism(1);
+
+        env.execute("Sink_To_Kudu");
     }
 }

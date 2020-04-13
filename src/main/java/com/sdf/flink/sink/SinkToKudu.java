@@ -1,17 +1,20 @@
 package com.sdf.flink.sink;
 
-import com.sdf.flink.util.MaxwellDataIntoKudu;
+import com.sdf.flink.util.GetJSONDataIntoKudu;
 import org.apache.flink.api.common.accumulators.IntCounter;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.kudu.client.*;
 
+import java.util.List;
+
 /**
- * 将数据插入到Kudu中Demo
+ * Modify by wwg 2020-04-13
+ * 将数据插入到Kudu中
  */
 
 public class SinkToKudu extends RichSinkFunction<String> {
-    private String kudu_master;
+    private List<String> kudu_master;
     private int kudu_batch;
     private static KuduClient kudu_client;
     private static KuduSession kudu_session;
@@ -23,7 +26,7 @@ public class SinkToKudu extends RichSinkFunction<String> {
      * @param kudu_master kudu master地址
      * @param kudu_batch  每批次插入的笔数
      */
-    public SinkToKudu(String kudu_master, int kudu_batch) {
+    public SinkToKudu(List<String> kudu_master, int kudu_batch) {
         this.kudu_master = kudu_master;
         this.kudu_batch = kudu_batch;
     }
@@ -41,20 +44,22 @@ public class SinkToKudu extends RichSinkFunction<String> {
     public void invoke(String value, Context context) throws Exception {
         if (value != null && !"".equals(value)) {
             //获取插入kudu表operation
-            Operation operation = MaxwellDataIntoKudu.getKuduOperation(value, kudu_client);
+            Operation operation = GetJSONDataIntoKudu.getBuriedKuduOperation(value, kudu_client);
             if (operation != null) {
                 kudu_session.apply(operation);
                 this.operation_batch.add(1);
+                kudu_session.flush();
+
                 //测试
                 //if (this.operation_batch.getLocalValue() > this.kudu_batch / 2) {
-                if (this.operation_batch.getLocalValue() > 10) {
+                /*if (this.operation_batch.getLocalValue() > 10) {
                     kudu_session.flush();
                     this.operation_batch.resetLocal();
                     // 确保数据插入成功
                     if (this.operation_batch.getLocalValue() > 0) {
                         kudu_session.flush();
                     }
-                }
+                }*/
             }
         }
     }
