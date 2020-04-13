@@ -24,7 +24,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+//import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+//import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
@@ -210,7 +213,7 @@ public class CustomerPurchaseAnalysis {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         // create customer user event stream
-        final FlinkKafkaConsumer011 kafkaUserEventSource = new FlinkKafkaConsumer011<>(
+        final FlinkKafkaConsumer kafkaUserEventSource = new FlinkKafkaConsumer<>(
                 parameters.getRequired("input-event-topic"),
                 new SimpleStringSchema(), parameters.getProperties());
 
@@ -226,7 +229,7 @@ public class CustomerPurchaseAnalysis {
                         });
 
         //读取配置参数数据流
-        final FlinkKafkaConsumer011 kafkaConfigEventSource = new FlinkKafkaConsumer011<>(
+        final FlinkKafkaConsumer kafkaConfigEventSource = new FlinkKafkaConsumer<>(
                 parameters.getRequired("input-config-topic"),
                 new SimpleStringSchema(), parameters.getProperties());
 
@@ -236,8 +239,8 @@ public class CustomerPurchaseAnalysis {
                         .broadcast(configStateDescriptor);
 
         //将结果输出到Kafka Topic中
-        @SuppressWarnings("unchecked") final FlinkKafkaProducer011 kafkaProducer011 =
-                new FlinkKafkaProducer011(parameters.getRequired("output-topic"),
+        @SuppressWarnings("unchecked") final FlinkKafkaProducer kafkaProducer011 =
+                new FlinkKafkaProducer(parameters.getRequired("output-topic"),
                         new SimpleStringSchema(), parameters.getProperties());
 
         //连接两个流数据

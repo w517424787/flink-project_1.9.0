@@ -7,7 +7,7 @@ import com.sdf.flink.util.GetKafkaProperties;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
 import java.util.Properties;
 
@@ -18,7 +18,7 @@ public class GetDataFromKafkaSinkToMySQL {
         //kafka属性
         Properties properties = GetKafkaProperties.getKafkaProperties();
 
-        SingleOutputStreamOperator<Student> student = env.addSource(new FlinkKafkaConsumer011<>("student",
+        SingleOutputStreamOperator<Student> student = env.addSource(new FlinkKafkaConsumer<>("student",
                 new SimpleStringSchema(), properties)).setParallelism(1)
                 .map(line -> JSON.parseObject(line, Student.class));
 

@@ -6,7 +6,7 @@ import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
 import java.util.Properties;
 
@@ -24,8 +24,8 @@ public class GetDataFromKafkaSinkToKudu {
 
         //kafka属性
         Properties properties = KafkaUtils.getKafkaProperties();
-
-        FlinkKafkaConsumer011<String> consumer = new FlinkKafkaConsumer011("usernetworkdelay",
+        
+        FlinkKafkaConsumer<String> consumer = new FlinkKafkaConsumer("usernetworkdelay",
                 new SimpleStringSchema(), properties);
         //设置offset读取位置
         consumer.setStartFromGroupOffsets(); //默认从group.id中读取
@@ -35,7 +35,7 @@ public class GetDataFromKafkaSinkToKudu {
 
         DataStreamSource<String> dataStreamSource = env.addSource(consumer).setParallelism(1);
 
-        dataStreamSource.addSink(new SinkToKudu("192.168.7.110:7051,192.168.7.111:7051", 4000));
+        dataStreamSource.addSink(new SinkToKudu("192.168.7.111:7051", 4000));
 
         env.execute("Sink To Kudu");
     }

@@ -6,8 +6,10 @@ import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+//import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
+//import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer011;
 
 import java.util.Properties;
 
@@ -24,10 +26,10 @@ public class GetDataIntoKafka {
         //读取Kafka属性
         Properties properties = KafkaUtils.getKafkaProperties();
 
-        DataStreamSource<String> dataStreamSource = env.addSource(new FlinkKafkaConsumer011<>("usernetworkdelay",
+        DataStreamSource<String> dataStreamSource = env.addSource(new FlinkKafkaConsumer<>("usernetworkdelay",
                 new SimpleStringSchema(), properties)).setParallelism(1);
 
-        dataStreamSource.addSink(new FlinkKafkaProducer011<>(brokerList, topic, new SimpleStringSchema()))
+        dataStreamSource.addSink(new FlinkKafkaProducer<>(brokerList, topic, new SimpleStringSchema()))
                 .name("flink-demo").setParallelism(1);
 
         env.execute("flink demo");

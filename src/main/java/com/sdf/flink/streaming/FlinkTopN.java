@@ -22,7 +22,7 @@ import org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExt
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,7 +74,7 @@ public class FlinkTopN {
         properties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         properties.put("auto.offset.reset", "latest");
 
-        FlinkKafkaConsumer011 userBrowseEvent = new FlinkKafkaConsumer011<>("flink-topn", new SimpleStringSchema(), properties);
+        FlinkKafkaConsumer userBrowseEvent = new FlinkKafkaConsumer<>("flink-topn", new SimpleStringSchema(), properties);
 
         //设置水位
         @SuppressWarnings("unchecked")

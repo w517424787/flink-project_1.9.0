@@ -4,7 +4,8 @@ import com.sdf.flink.util.GetKafkaProperties;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+//import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 
 import java.util.Properties;
 
@@ -15,7 +16,7 @@ public class GetDataFromKafka {
         //kafka属性
         Properties props = GetKafkaProperties.getKafkaProperties();
 
-        DataStreamSource<String> dataStreamSource = env.addSource(new FlinkKafkaConsumer011<>
+        DataStreamSource<String> dataStreamSource = env.addSource(new FlinkKafkaConsumer<>
                 ("metric", new SimpleStringSchema(), props)).setParallelism(1);
         dataStreamSource.print();
 
