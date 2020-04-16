@@ -35,6 +35,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flink.version>1.10.0</flink.version>
+        <alink.version>1.1.0</alink.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
         <kudu.version>1.7.0</kudu.version>
@@ -78,6 +79,13 @@
                     <artifactId>scala-library</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- alink -->
+        <dependency>
+            <groupId>com.alibaba.alink</groupId>
+            <artifactId>alink_core_flink-1.10_${scala.binary.version}</artifactId>
+            <version>${alink.version}</version>
         </dependency>
 
         <!--<dependency>
