@@ -20,6 +20,12 @@
         </repository>
 
         <repository>
+            <id>cloudera-repos</id>
+            <name>Cloudera Repos</name>
+            <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+        </repository>
+
+        <repository>
             <id>apache.snapshots</id>
             <name>Apache Development Snapshot Repository</name>
             <url>https://repository.apache.org/content/repositories/snapshots/</url>
@@ -39,6 +45,9 @@
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
         <kudu.version>1.7.0</kudu.version>
+        <hbase.version>1.2.0</hbase.version>
+        <hadoop.version>2.6.0</hadoop.version>
+        <redis.version>3.0.1</redis.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
@@ -58,15 +67,15 @@
 
         <!-- Add connector dependencies here. They must be in the default scope (compile). -->
         <!--<dependency>-->
-            <!--<groupId>org.apache.flink</groupId>-->
-            <!--<artifactId>flink-connector-kafka-0.11_${scala.binary.version}</artifactId>-->
-            <!--<version>${flink.version}</version>-->
+        <!--<groupId>org.apache.flink</groupId>-->
+        <!--<artifactId>flink-connector-kafka-0.11_${scala.binary.version}</artifactId>-->
+        <!--<version>${flink.version}</version>-->
         <!--</dependency>-->
 
         <dependency>
-        <groupId>org.apache.flink</groupId>
-        <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
-        <version>${flink.version}</version>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
         </dependency>
 
         <dependency>
@@ -198,6 +207,37 @@
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!--Hbase-->
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-client</artifactId>
+            <version>${hbase.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-server</artifactId>
+            <version>${hbase.version}</version>
+        </dependency>
+
+        <!--redis-->
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${redis.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-redis_${scala.binary.version}</artifactId>
+            <version>1.1.5</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-jdbc_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
         </dependency>
 
     </dependencies>

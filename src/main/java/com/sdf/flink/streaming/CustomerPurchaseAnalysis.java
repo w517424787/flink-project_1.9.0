@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  * {"channel":"APP","registerDate":"2018-01-01","historyPurchaseTimes":0,"maxPurchasePathLength":3}
  * 只输出用户购物路径超过定义的长度的用户，并将数据返回到Kafka Topic中，格式：
  * {"userId":"a9b83681ba4df17a30abcf085ce80a9b","channel":"APP","purchasePathLength":9,"eventTypeCounts":{"ADD_TO_CART":1,"PURCHASE":1,"VIEW_PRODUCT":7}}
- * 定义三个Kafka Topic:input-event-topic,input-config-topic,output-topic
+ * 定义三个Kafka Topic:input-event-topic,input-config.properties-topic,output-topic
  */
 
 public class CustomerPurchaseAnalysis {
@@ -92,7 +92,7 @@ public class CustomerPurchaseAnalysis {
             String channel = value.getChannel();
             EventType eventType = EventType.valueOf(value.getEventType());
             Config config = ctx.getBroadcastState(configStateDescriptor).get(channel);
-            LOG.info("Read config: channel=" + channel + ", config=" + config);
+            LOG.info("Read config.properties: channel=" + channel + ", config.properties=" + config);
             //判断是否为空
             if (Objects.isNull(config)) {
                 config = DEFAULT_CONFIG;
@@ -180,7 +180,7 @@ public class CustomerPurchaseAnalysis {
                 LOG.info("Config detail: defaultConfig=" + DEFAULT_CONFIG + ", newConfig=" + value);
             }
 
-            // update config value for config key
+            // update config.properties value for config.properties key
             state.put(channel, value);
         }
     }
@@ -192,7 +192,7 @@ public class CustomerPurchaseAnalysis {
         final ParameterTool parameters = ParameterTool.fromArgs(args);
         if (parameters.getNumberOfParameters() < 5) {
             System.out.println("Missing parameters!\n" +
-                    "Usage: Kafka --input-event-topic <topic> --input-config-topic <topic> --output-topic <topic> " +
+                    "Usage: Kafka --input-event-topic <topic> --input-config.properties-topic <topic> --output-topic <topic> " +
                     "--bootstrap.servers <kafka brokers> " +
                     "--zookeeper.connect <zk quorum> " +
                     "--group.id <group id>");
@@ -230,7 +230,7 @@ public class CustomerPurchaseAnalysis {
 
         //读取配置参数数据流
         final FlinkKafkaConsumer kafkaConfigEventSource = new FlinkKafkaConsumer<>(
-                parameters.getRequired("input-config-topic"),
+                parameters.getRequired("input-config.properties-topic"),
                 new SimpleStringSchema(), parameters.getProperties());
 
         //进行广播
