@@ -13,6 +13,7 @@ import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.calcite.shaded.com.google.common.collect.Maps;
+import org.apache.flink.contrib.streaming.state.RocksDBStateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -199,18 +200,28 @@ public class CustomerPurchaseAnalysis {
         }
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        //设置水印时间
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.getConfig().setGlobalJobParameters(parameters);
+        //env.setStateBackend(new RocksDBStateBackend("hdfs://192.168.7.111:8020/flink/checkpoint/customer-purchase", true));
+
         //设置状态checkpoint路径
         env.setStateBackend(new FsStateBackend("hdfs://192.168.7.111:8020/flink/checkpoint/customer-purchase"));
 
         //设置checkpoint参数
         CheckpointConfig checkpointConfig = new CheckpointConfig();
+        // 任务流取消和故障时会保留Checkpoint数据，以便根据实际需要恢复到指定的Checkpoint
         checkpointConfig.enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
+        // 设置模式为exactly-once
         checkpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE);
+        // 设置checkpoint触发时间
         checkpointConfig.setCheckpointInterval(60 * 60 * 1000); //1小时触发一次
+        // 设置checkpoint超时时间
         checkpointConfig.setCheckpointTimeout(10 * 60 * 1000); //设置Timeout时间
-
-        env.getConfig().setGlobalJobParameters(parameters);
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        // 设置checkpoint同时最大允许进行几个检查点
+        checkpointConfig.setMaxConcurrentCheckpoints(1);
+        // 确保检查点之间有至少60 * 1000的间隔【checkpoint最小间隔】
+        checkpointConfig.setMinPauseBetweenCheckpoints(60 * 1000);
 
         // create customer user event stream
         final FlinkKafkaConsumer kafkaUserEventSource = new FlinkKafkaConsumer<>(
