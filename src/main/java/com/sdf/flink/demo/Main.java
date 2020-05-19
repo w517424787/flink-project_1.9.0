@@ -22,5 +22,8 @@ public class Main {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = sdf.parse(str);
         System.out.println(new SimpleDateFormat("yyyyMMddHHmmss").format(date));
+
+        System.out.println(Long.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                .parse("2020-04-30 16:04:54").getTime() / 1000));
     }
 }
