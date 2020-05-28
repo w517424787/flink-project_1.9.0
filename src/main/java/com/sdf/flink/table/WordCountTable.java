@@ -30,8 +30,7 @@ public class WordCountTable {
         String path = "E:\\flink-project\\flink-project_1.9.0\\data\\words.txt";
 
         //注册表（方式一）
-        tEnv.connect(new FileSystem().path(path))
-                .withFormat(new OldCsv().field("name", Types.STRING)
+        tEnv.connect(new FileSystem().path(path)).withFormat(new OldCsv().field("name", Types.STRING)
                         .field("score", Types.INT).fieldDelimiter(",").lineDelimiter("\n"))
                 .withSchema(new Schema().field("name", Types.STRING).field("score", Types.INT))
                 .registerTableSource("person");

@@ -12,7 +12,6 @@ public class FlinkSinkDemo1 {
         EnvironmentSettings settings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build();
         //TableEnvironment tEnv = TableEnvironment.create(settings);
         StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env, settings);
-
         DataStream<String> ds = env.fromElements("a", "b", "c");
     }
 }

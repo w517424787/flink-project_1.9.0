@@ -1,0 +1,11 @@
+A10001,tel,iphone,6500
+A10001,tel,huawei,8000
+A10001,tel,vivo,3500
+A10001,tel,mi,2650
+A10001,tel,oppo,4500
+A10001,tel,samsung,7500
+A10002,notebook,iphone,18000
+A10002,notebook,huawei,12000
+A10002,notebook,mi,7650
+A10002,notebook,samsung,8500
+A10002,notebook,thinkpad,6800

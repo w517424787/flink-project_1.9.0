@@ -27,7 +27,7 @@ public class FlinkWatermarkDemo {
         env.setParallelism(1);
 
         //读取数据
-        DataStream<String> dstream = env.socketTextStream("192.168.7.115", 9999)
+        DataStream<String> dstream = env.socketTextStream("192.168.7.115", 8888)
                 .assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<String>() {
 
                     //当前最大的timestamp
@@ -41,6 +41,7 @@ public class FlinkWatermarkDemo {
                     @Override
                     public Watermark getCurrentWatermark() {
                         currentWatermark = currentMaxTimestamp - maxDelayAllowed;
+                        System.out.println("当前水位线:" + currentWatermark);
                         return new Watermark(currentWatermark);
                     }
 
@@ -52,7 +53,7 @@ public class FlinkWatermarkDemo {
                         System.out.println("Key:" + arrays[0] + ",EventTime:" + timeStamp + ",Watermark:" + currentWatermark);
                         return timeStamp;
                     }
-                });
+                })  ;
 
         dstream.map(new MapFunction<String, Tuple2<String, String>>() {
             @Override

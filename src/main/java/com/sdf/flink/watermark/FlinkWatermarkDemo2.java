@@ -24,6 +24,8 @@ public class FlinkWatermarkDemo2 {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        //设置生成watermark的周期，参数是milliseconds
+        env.getConfig().setAutoWatermarkInterval(1000);
 
         //定义窗口关闭后，延迟数据存储集合
         OutputTag outputTag = new OutputTag<SensorReading>("side");

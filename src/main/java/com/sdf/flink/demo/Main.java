@@ -25,5 +25,7 @@ public class Main {
 
         System.out.println(Long.valueOf(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
                 .parse("2020-04-30 16:04:54").getTime() / 1000));
+
+        System.out.println(System.currentTimeMillis());
     }
 }
