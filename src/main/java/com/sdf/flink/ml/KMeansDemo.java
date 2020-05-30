@@ -5,10 +5,11 @@ import com.alibaba.alink.operator.batch.source.CsvSourceBatchOp;
 import com.alibaba.alink.pipeline.Pipeline;
 import com.alibaba.alink.pipeline.clustering.KMeans;
 import com.alibaba.alink.pipeline.dataproc.vector.VectorAssembler;
+import com.sdf.flink.util.FilePathUtil;
 
 public class KMeansDemo {
     public static void main(String[] args) throws Exception {
-        final String URL = "E:\\flink-demo\\flink-project_1.10.0\\data\\iris.csv";
+        final String URL = FilePathUtil.getFilePath("iris.csv");
         final String SCHEMA_STR = "sepal_length double, sepal_width double, petal_length double," +
                 " petal_width double, category string";
 
