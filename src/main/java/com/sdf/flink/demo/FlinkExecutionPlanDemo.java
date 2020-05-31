@@ -1,5 +1,6 @@
 package com.sdf.flink.demo;
 
+import com.sdf.flink.util.FilePathUtil;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -11,7 +12,7 @@ public class FlinkExecutionPlanDemo {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        String path = "E:\\flink-demo\\flink-project_1.10.0\\data\\test.txt";
+        String path = FilePathUtil.getFilePath("test.txt");
 
         DataStream<Tuple2<String, Integer>> dataStream =
                 env.readTextFile(path).flatMap(new FlatMapFunction<String, Tuple2<String, Integer>>() {
