@@ -24,7 +24,7 @@ public class FlinkPVSource extends RichSourceFunction<String> {
             index = new Random().nextInt(5);
             pvData.setUserId(userIds[index]);
             pvData.setPlatform("web");
-            pvData.setTs(System.currentTimeMillis());
+                pvData.setTs(System.currentTimeMillis());
 
             //转换成JSON格式
             ctx.collect(JSON.toJSONString(pvData));

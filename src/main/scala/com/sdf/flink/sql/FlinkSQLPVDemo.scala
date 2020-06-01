@@ -1,5 +1,8 @@
 package com.sdf.flink.sql
 
+import java.util
+
+import com.sdf.flink.sink.SinkPVToKudu
 import com.sdf.flink.util.Logger
 import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -9,6 +12,7 @@ import org.apache.flink.table.catalog.hive.HiveCatalog
 import org.apache.flink.api.scala._
 import org.apache.flink.runtime.state.filesystem.FsStateBackend
 import org.apache.flink.streaming.api.environment.CheckpointConfig
+import org.apache.flink.streaming.api.functions.sink.RichSinkFunction
 import org.apache.flink.table.api.scala._
 import org.apache.flink.types.Row
 
@@ -25,18 +29,17 @@ object FlinkSQLPVDemo extends Logger {
     //每60s触发一次
     streamEnv.enableCheckpointing(60 * 1000)
     streamEnv.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
-    //streamEnv.setStateBackend(new FsStateBackend("hdfs://192.168.7.111:8020/flink/checkpoint/flink-sql"))
-    //设置checkpoint参数
-    val checkpointConfig: CheckpointConfig = new CheckpointConfig
-    checkpointConfig.enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION)
+    //streamEnv.setStateBackend(new FsStateBackend("hdfs://192.168.7.111:8020/flink/checkpoint"))
 
+    //checkpoint保留方式，手动取消时删除
+    streamEnv.getCheckpointConfig.enableExternalizedCheckpoints(
+      CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION)
     // 设置checkpoint超时时间
-    checkpointConfig.setCheckpointTimeout(30 * 1000) //设置Timeout时间
-
+    streamEnv.getCheckpointConfig.setCheckpointTimeout(30 * 1000) //设置Timeout时间
     // 设置checkpoint同时最大允许进行几个检查点
-    checkpointConfig.setMaxConcurrentCheckpoints(1)
+    streamEnv.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
     // 确保检查点之间有至少30 * 1000的间隔【checkpoint最小间隔】
-    checkpointConfig.setMinPauseBetweenCheckpoints(30 * 1000)
+    streamEnv.getCheckpointConfig.setMinPauseBetweenCheckpoints(30 * 1000)
 
     val tableEnvSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build()
     val tableEnv = StreamTableEnvironment.create(streamEnv, tableEnvSettings)
@@ -142,6 +145,12 @@ object FlinkSQLPVDemo extends Logger {
       """.stripMargin
 
     tableEnv.sqlUpdate(insertSql)
+
+    val kudu_master: String = "192.168.7.111:7051"
+    val kudu_batch: Int = 5
+
+    //数据插入到kudu表中
+    tableEnv.toAppendStream[Row](resultTable).addSink(new SinkPVToKudu(kudu_master, kudu_batch)).setParallelism(1)
 
     //val query = "SELECT eventType,userId,platform,ts FROM rtdw.flink_ods.streaming_user_active_log"
     //val result = tableEnv.sqlQuery(query)
