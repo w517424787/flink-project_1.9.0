@@ -1,4 +1,4 @@
-package com.sdf.flink.lintcode;
+package com.sdf.flink.leetcode;
 
 /**
  * Modify by wwg 2020-05-31
