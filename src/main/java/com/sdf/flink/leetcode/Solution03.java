@@ -1,4 +1,4 @@
-package com.sdf.flink.lintcode;
+package com.sdf.flink.leetcode;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +17,7 @@ public class Solution03 {
     /**
      * 查找无重复字符串最大长度
      *
-     * @param s
+     * @param s 字符串
      * @return
      */
     public static int lengthOfLongestSubstring(String s) {
