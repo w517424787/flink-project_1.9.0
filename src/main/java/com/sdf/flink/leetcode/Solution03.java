@@ -39,9 +39,9 @@ public class Solution03 {
     public static void main(String[] args) {
         String str = "dvdf";
         System.out.println(lengthOfLongestSubstring(str));
-        //String str2 = "bbbbb";
-        //System.out.println(lengthOfLongestSubstring(str2));
-        //String str3 = "pwwkew";
-        //System.out.println(lengthOfLongestSubstring(str3));
+        String str2 = "bbbbb";
+        System.out.println(lengthOfLongestSubstring(str2));
+        String str3 = "pwwkew";
+        System.out.println(lengthOfLongestSubstring(str3));
     }
 }
