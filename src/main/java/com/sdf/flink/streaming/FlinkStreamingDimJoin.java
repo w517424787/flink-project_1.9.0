@@ -27,7 +27,7 @@ public class FlinkStreamingDimJoin {
      * 根据输入的cityId获取对应的cityDesc
      * open方法先加载维度数据到内存中
      */
-    private static class DimFlatFunction extends RichFlatMapFunction<Integer, Tuple2<Integer, String>> {
+    private static final class DimFlatFunction extends RichFlatMapFunction<Integer, Tuple2<Integer, String>> {
 
         //cityId -> cityDesc
         static Map<Integer, String> dim = new HashMap<>();
