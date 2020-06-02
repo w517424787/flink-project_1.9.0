@@ -1,6 +1,5 @@
 package com.sdf.flink.streaming;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
@@ -83,7 +82,8 @@ public class FlinkStreamingDimJoin {
 
         @Override
         public void flatMap(Integer value, Collector<Tuple2<Integer, String>> out) throws Exception {
-            out.collect(new Tuple2<>(value, dim.get(value)));
+            //out.collect(new Tuple2<>(value, dim.get(value)));
+            out.collect(Tuple2.of(value, dim.get(value)));
         }
     }
 
