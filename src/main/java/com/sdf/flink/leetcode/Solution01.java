@@ -1,4 +1,4 @@
-package com.sdf.flink.lintcode;
+package com.sdf.flink.leetcode;
 
 import java.util.HashMap;
 import java.util.Map;
