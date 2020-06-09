@@ -32,7 +32,7 @@ object FlinkLateralJoinDemo {
 
   def main(args: Array[String]): Unit = {
     val streamEnv = StreamExecutionEnvironment.getExecutionEnvironment
-    val settings = EnvironmentSettings.newInstance().useOldPlanner().inStreamingMode().build()
+    val settings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build()
     val tableEnv = StreamTableEnvironment.create(streamEnv, settings)
     streamEnv.setParallelism(1)
 
