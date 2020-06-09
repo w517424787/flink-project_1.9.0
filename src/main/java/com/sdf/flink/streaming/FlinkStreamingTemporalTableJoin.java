@@ -46,7 +46,7 @@ public class FlinkStreamingTemporalTableJoin {
         ordersData.add(Tuple3.of(2L, "Euro", new Timestamp(2L)));
         ordersData.add(Tuple3.of(1L, "US Dollar", new Timestamp(3L)));
         ordersData.add(Tuple3.of(50L, "Yen", new Timestamp(4L)));
-        ordersData.add(Tuple3.of(3L, "Euro", new Timestamp(5L)));
+        ordersData.add(Tuple3.of(3L, "Euro", new Timestamp(7L)));
 
         //订单流
         SingleOutputStreamOperator<Tuple3<Long, String, Timestamp>> orderStream = env.fromCollection(ordersData)
