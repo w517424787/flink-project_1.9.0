@@ -1,5 +1,6 @@
 package com.sdf.flink.demo;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
@@ -27,5 +28,9 @@ public class Main {
                 .parse("2020-04-30 16:04:54").getTime() / 1000));
 
         System.out.println(System.currentTimeMillis());
+
+        //1970-01-01 08:00:00.002
+        System.out.println(new Timestamp(10L).getTime());
+
     }
 }
