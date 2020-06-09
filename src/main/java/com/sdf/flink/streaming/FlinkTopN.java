@@ -41,9 +41,67 @@ import java.util.Properties;
 
 public class FlinkTopN {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FlinkTopN.class);
+    final static class TopNHotItems extends KeyedProcessFunction<Long, UserBrowseItemIdCount, String> {
+        private final int topN;
+
+        public TopNHotItems(int topN) {
+            this.topN = topN;
+        }
+
+        //用于存储用户订单数量状态，待收齐同一个窗口的数据后，再触发TopN计算
+        private ListState<UserBrowseItemIdCount> itemIdCountListState;
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+
+            //进行状态注册
+            ListStateDescriptor<UserBrowseItemIdCount> itemIdStateDesc =
+                    new ListStateDescriptor<>("itemIdState", UserBrowseItemIdCount.class);
+            itemIdCountListState = getRuntimeContext().getListState(itemIdStateDesc);
+        }
+
+        @Override
+        public void processElement(UserBrowseItemIdCount userBrowseItemIdCount, Context context,
+                                   Collector<String> collector) throws Exception {
+            //每条数据都保存到状态中
+            itemIdCountListState.add(userBrowseItemIdCount);
+
+            //注册windowEnd+1的EventTime Timer, 当触发时，说明收齐了属于windowEnd窗口的所有商品数
+            context.timerService().registerProcessingTimeTimer(userBrowseItemIdCount.getTimeWindow() + 1);
+        }
+
+        @Override
+        public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+            super.onTimer(timestamp, ctx, out);
+
+            //获取所有商品的订单信息
+            List<UserBrowseItemIdCount> allUserOrder = new ArrayList<>();
+            for (UserBrowseItemIdCount itemIdCount : itemIdCountListState.get()) {
+                allUserOrder.add(itemIdCount);
+            }
+
+            //提前清除状态中的数据，释放空间
+            itemIdCountListState.clear();
+
+            //按订单量从大到小进行排序
+            allUserOrder.sort((o1, o2) -> o2.getOrderCount() - o1.getOrderCount());
+
+            //返回指定TopN数据
+            for (int i = 0; i < topN; i++) {
+                if (i < allUserOrder.size()) {
+                    UserBrowseItemIdCount userBrowseItemIdCount = allUserOrder.get(i);
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("itemId:", userBrowseItemIdCount.getItemId());
+                    jsonObject.put("orderQt:", userBrowseItemIdCount.getOrderCount());
+                    out.collect(jsonObject.toString());
+                }
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
+        final Logger LOG = LoggerFactory.getLogger(FlinkTopN.class);
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
@@ -154,67 +212,5 @@ public class FlinkTopN {
                 .print();
 
         env.execute("FlinkTopN");
-    }
-}
-
-class TopNHotItems extends KeyedProcessFunction<Long, UserBrowseItemIdCount, String> {
-    private final int topN;
-
-    public TopNHotItems(int topN) {
-        this.topN = topN;
-    }
-
-    //用于存储用户订单数量状态，待收齐同一个窗口的数据后，再触发TopN计算
-    private ListState<UserBrowseItemIdCount> itemIdCountListState;
-
-    @Override
-    public void open(Configuration parameters) throws Exception {
-        super.open(parameters);
-
-        //进行状态注册
-        ListStateDescriptor<UserBrowseItemIdCount> itemIdStateDesc = new ListStateDescriptor<>("itemIdState", UserBrowseItemIdCount.class);
-        itemIdCountListState = getRuntimeContext().getListState(itemIdStateDesc);
-    }
-
-    @Override
-    public void processElement(UserBrowseItemIdCount userBrowseItemIdCount, Context context, Collector<String> collector) throws Exception {
-        //每条数据都保存到状态中
-        itemIdCountListState.add(userBrowseItemIdCount);
-
-        //注册windowEnd+1的EventTime Timer, 当触发时，说明收齐了属于windowEnd窗口的所有商品数
-        context.timerService().registerProcessingTimeTimer(userBrowseItemIdCount.getTimeWindow() + 1);
-    }
-
-    @Override
-    public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
-        super.onTimer(timestamp, ctx, out);
-
-        //获取所有商品的订单信息
-        List<UserBrowseItemIdCount> allUserOrder = new ArrayList<>();
-        for (UserBrowseItemIdCount itemIdCount : itemIdCountListState.get()) {
-            allUserOrder.add(itemIdCount);
-        }
-
-        //提前清除状态中的数据，释放空间
-        itemIdCountListState.clear();
-
-        //按订单量从大到小进行排序
-        allUserOrder.sort(new Comparator<UserBrowseItemIdCount>() {
-            @Override
-            public int compare(UserBrowseItemIdCount o1, UserBrowseItemIdCount o2) {
-                return o2.getOrderCount() - o1.getOrderCount();
-            }
-        });
-
-        //返回指定TopN数据
-        for (int i = 0; i < topN; i++) {
-            if (i < allUserOrder.size()) {
-                UserBrowseItemIdCount userBrowseItemIdCount = allUserOrder.get(i);
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("itemId:", userBrowseItemIdCount.getItemId());
-                jsonObject.put("orderQt:", userBrowseItemIdCount.getOrderCount());
-                out.collect(jsonObject.toString());
-            }
-        }
     }
 }
