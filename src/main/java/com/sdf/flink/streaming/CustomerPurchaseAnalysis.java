@@ -82,6 +82,7 @@ public class CustomerPurchaseAnalysis {
     private static class ConnectedBroadcastProcessFunction extends KeyedBroadcastProcessFunction<Object,
             UserEvent, Config, EvaluatedResult> {
 
+        private static final long serialVersionUID = 1L;
         //定义state格式：(channel, Map<userId, UserEventContainer>)
         private final MapStateDescriptor<String, Map<String, UserEventContainer>> userMapStateDesc =
                 new MapStateDescriptor<>("userEventContainerState", BasicTypeInfo.STRING_TYPE_INFO,

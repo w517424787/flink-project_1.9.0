@@ -1,5 +1,6 @@
 package com.sdf.flink.sql
 
+import org.apache.flink.api.java.io.jdbc.JDBCAppendTableSink
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.table.api.EnvironmentSettings
 import org.apache.flink.table.api.scala.StreamTableEnvironment
