@@ -1,7 +1,7 @@
 package com.sdf.flink.sql
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.apache.flink.table.api.EnvironmentSettings
+import org.apache.flink.table.api.{EnvironmentSettings, TableEnvironment}
 import org.apache.flink.table.api.scala.StreamTableEnvironment
 import org.apache.flink.table.functions.TableFunction
 import org.apache.flink.api.scala._
@@ -34,6 +34,7 @@ object FlinkLateralJoinDemo {
     val streamEnv = StreamExecutionEnvironment.getExecutionEnvironment
     val settings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build()
     val tableEnv = StreamTableEnvironment.create(streamEnv, settings)
+
     streamEnv.setParallelism(1)
 
     val usersData = List("Sunny#8", "Kevin#36", "Panpan#36")

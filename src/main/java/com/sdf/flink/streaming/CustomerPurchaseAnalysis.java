@@ -203,6 +203,8 @@ public class CustomerPurchaseAnalysis {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         //设置水印时间
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        //设置水印产生周期(5s)，默认是200ms
+        env.getConfig().setAutoWatermarkInterval(5000L);
         env.getConfig().setGlobalJobParameters(parameters);
         //env.setStateBackend(new RocksDBStateBackend("hdfs://192.168.7.111:8020/flink/checkpoint/customer-purchase", true));
 
