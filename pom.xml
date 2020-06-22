@@ -51,6 +51,7 @@
         <hive.version>1.1.0</hive.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <scalikejdbc.version>3.4.2</scalikejdbc.version>
     </properties>
 
     <dependencies>
@@ -314,6 +315,24 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-statebackend-rocksdb_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scalikejdbc</groupId>
+            <artifactId>scalikejdbc_${scala.binary.version}</artifactId>
+            <version>${scalikejdbc.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scalikejdbc</groupId>
+            <artifactId>scalikejdbc-core_${scala.binary.version}</artifactId>
+            <version>${scalikejdbc.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scalikejdbc</groupId>
+            <artifactId>scalikejdbc-config_${scala.binary.version}</artifactId>
+            <version>${scalikejdbc.version}</version>
         </dependency>
 
     </dependencies>
