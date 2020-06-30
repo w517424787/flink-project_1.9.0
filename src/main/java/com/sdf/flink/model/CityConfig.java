@@ -28,4 +28,12 @@ public class CityConfig {
         this.cityDesc = cityDesc;
         this.cityId = cityId;
     }
+
+    @Override
+    public String toString() {
+        return "CityConfig{" +
+                "cityId=" + cityId +
+                ", cityDesc='" + cityDesc + '\'' +
+                '}';
+    }
 }
